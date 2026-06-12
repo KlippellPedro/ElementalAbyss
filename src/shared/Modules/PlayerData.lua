@@ -40,6 +40,29 @@ function PlayerData.novo()
 	return dados
 end
 
+-- Pontos de atributo ganhos a cada level up.
+-- 3 = mais momentos de escolha por nivel e identidade de build mais cedo.
+PlayerData.PONTOS_POR_NIVEL = 3
+
+-- Quanto cada ponto investido aumenta no atributo
+-- (compartilhado: o servidor aplica e a UI mostra o mesmo numero)
+PlayerData.IncrementoPorPonto = {
+	Vida = 20,
+	Mana = 10,
+	AtaqueFisico = 2,
+	PoderElemental = 2,
+	Defesa = 1,
+	Velocidade = 1,
+	Sorte = 1,
+	ResistenciaElemental = 1,
+}
+
+-- Teto de atributos que quebram o jogo se crescerem livres.
+-- Velocidade: base 16, cap 30 (quase 2x) — mais que isso pula conteudo.
+PlayerData.LimiteAtributo = {
+	Velocidade = 30,
+}
+
 -- Calcula quanto XP e necessario pra um certo nivel
 function PlayerData.xpParaNivel(nivel)
 	-- formula de escalonamento: cresce mais a cada nivel

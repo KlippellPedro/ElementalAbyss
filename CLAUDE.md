@@ -43,7 +43,14 @@ Atributos base do jogador novo:
 
 - Vida = 100, Mana = 50, AtaqueFisico = 10, PoderElemental = 10,
   Defesa = 5, Velocidade = 16, Sorte = 1, ResistenciaElemental = 0
-- +1 ponto de atributo por nível, distribuição livre.
+- **3 pontos de atributo por nível** (`PlayerData.PONTOS_POR_NIVEL`), distribuição livre.
+- Incremento por ponto (`PlayerData.IncrementoPorPonto`): Vida +20, Mana +10,
+  AtaqueFisico +2, PoderElemental +2, Defesa/Velocidade/Sorte/Resistencia +1.
+- Tetos (`PlayerData.LimiteAtributo`): Velocidade máx 30 (quebra o jogo se livre).
+- Racional: atributos são o INPUT — os números explosivos (K/M/B) virão das
+  fórmulas de dano (arma × poder × multiplicador de rebirth), com inimigo
+  escalando junto. Defesa/Resistência entrarão em fórmula de curva
+  (ex: dano * 100/(100+Defesa)) para nunca zerar dano recebido.
 - Curva de XP: `math.floor(100 * (nivel ^ 1.5))`.
 - Classes dão bônus passivos por nível, mas build é livre (ex: guerreiro tank é viável).
 
@@ -100,10 +107,57 @@ Abissal (endgame), de Guilda (co-op 2-6 players).
   (save real só funciona após publicar o jogo + habilitar API no Studio). ✓
 - `server/TestService.lua`: auto-XP a cada 5s + comando de chat `/xp <qtd>`
   (só roda em Studio — remover/desativar antes de publicar). ✓
-- `client/init.client.luau`: HUD com nível, barra de XP animada e pontos
-  disponíveis. Cliente pede estado inicial via `FireServer()` ao carregar. ✓
-- PRÓXIMO PASSO: tela de distribuição de pontos de atributo (cliente pede,
-  servidor valida) ou publicar o jogo para ativar o save de verdade.
+- Jogo publicado no Roblox + API de DataStore habilitada — save/load testado
+  e funcionando entre sessões. ✓
+- UI do cliente com design system próprio, estilo "chunky medieval" (referência:
+  RPGs de grind clássicos — molduras bronze/couro, cores saturadas, contorno
+  escuro grosso em tudo, texto branco com borda): ✓
+  - Fontes do catálogo embutido via `Font.new("rbxasset://fonts/families/...")`:
+    Fredoka One (interface) e Grenze Gotisch (momentos épicos/level up).
+  - `client/UI/Theme.lua` — tokens de design + cor de acento por elemento
+    (UI reage ao elemento equipado no futuro)
+  - `client/UI/Componentes.lua` — fábrica: painel de couro, rótulo com borda,
+    círculo/badge, botão chunky (hover/press), barra com gradiente vertical
+    "doce", rótulo interno (HP/MP/EXP), divisórias e shine sweep
+  - Pacote de profundidade (nativo, sem assets): `criarSombra` (sombra projetada
+    via Frame irmão com ZIndex-1), `aplicarRelevo` (brilho topo + sombra base via
+    overlays de gradiente de transparência = efeito 3D "bala de goma"), trilho
+    das barras com sombra interna (entalhe). ScreenGui usa ZIndexBehavior
+    Sibling EXPLÍCITO (default legado é Global e esconde filhos com ZIndex menor
+    que o pai — causou janelas vazias).
+  - `client/UI/Efeitos.lua` — sons via rbxasset (arpejo de pings no level up),
+    partículas no personagem (sparkles 3D), textos flutuantes "+N XP"
+  - `client/UI/HUD.lua` — cartão do jogador (avatar com anel dourado, badge de
+    nível), menu lateral (Atributos/Inventário/Missões/Loja, com badge vermelho
+    de pontos não gastos), barra de EXP, celebração de level up, entrada animada
+  - `client/UI/Janela.lua` — sistema de janelas modais (uma por vez, backdrop,
+    barra de título bronze, botão X) + `criarEmBreve` para telas placeholder
+  - `client/UI/TelaAtributos.lua` — FUNCIONAL: distribuição de pontos nos 8
+    atributos via RemoteEvent `DistribuirPonto` (validação 100% no servidor:
+    `PlayerService.distribuirPonto` checa nome do atributo e pontos restantes)
+  - `client/UI/TelaInventario.lua` — abas Armas/Armaduras/Magias/Pets/Itens com
+    grade de 24 slots (estrutura visual; enche quando existir sistema de itens)
+  - Missões e Loja: janelas "Em breve" via `Janela.criarEmBreve`
+  - `shared/Modules/PlayerData.IncrementoPorPonto` — quanto cada ponto aumenta
+    por atributo (Vida +10, Mana +5, demais +1); compartilhado servidor/cliente
+  - `shared/Modules/Formato.lua` — números com sufixos K/M/B/T
+  - Efeitos só com recursos nativos (rbxasset) — sem upload de assets.
+  - `assets/icons/` — 13 ícones silhueta branca (tingíveis via ImageColor3):
+    atributos, ataque, defesa, inventario, loja, mana, missoes, moedas, poder,
+    resistencia, sorte, velocidade, vida. `client/UI/Icones.lua` centraliza os
+    asset IDs (0 = sem upload ainda; UI degrada graciosamente sem o ícone).
+    Fluxo: Studio > Asset Manager > Bulk Import > colar IDs no Icones.lua.
+    Ícones já ligados: botões do menu lateral + linhas da TelaAtributos.
+  - `assets/ui/` — 5 texturas 9-slice geradas por script (System.Drawing):
+    painel (couro+bronze+rebites), botao (branca tingível via ImageColor3),
+    barra_trilho, barra_fill (tingível), slot. IDs em Icones.lua (tex_*).
+    Componentes usa textura quando ID > 0, senão fallback do visual em código.
+    Slices: painel 40,40,104,104 | botao/slot 28,28,68,68 | barras 20,19,44,21.
+  - CUIDADO: projeto dentro do OneDrive já causou dessincronização do Rojo
+    (instâncias sumindo no Studio). Se acontecer de novo: Disconnect + Connect
+    no plugin. Plano: mover o projeto para fora do OneDrive.
+- PRÓXIMO PASSO: tela de distribuição de pontos de atributo — a pílula dourada
+  já existe e é o botão que vai abrir essa tela (cliente pede, servidor valida).
 
 ## Como trabalhar neste projeto
 
